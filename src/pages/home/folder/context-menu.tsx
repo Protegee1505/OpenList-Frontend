@@ -199,6 +199,30 @@ export const ContextMenu = () => {
         >
           <ItemContent name="download" />
         </Item>
+        <Item
+          hidden={({ props }) => {
+            return (
+              props.type !== ObjType.VIDEO && props.type !== ObjType.AUDIO
+            )
+          }}
+          onClick={({ props }) => {
+            const href = convertURL("mpv://$edurl", {
+              raw_url: "",
+              name: props.name,
+              d_url: rawLink(props, true),
+            })
+            window.open(href, "_self")
+          }}
+        >
+          <HStack spacing="$2">
+            <Image
+              m="0 auto"
+              boxSize="$7"
+              src={`${window.__dynamic_base__}/images/mpv.webp`}
+            />
+            <Text>Play with mpv</Text>
+          </HStack>
+        </Item>
         <Submenu
           hidden={({ props }) => {
             return props.type !== ObjType.VIDEO
@@ -215,7 +239,7 @@ export const ContextMenu = () => {
             </HStack>
           }
         >
-          <For each={players}>
+          <For each={players.filter((p) => p.icon !== "mpv")}>
             {(player) => (
               <Item
                 onClick={({ props }) => {
