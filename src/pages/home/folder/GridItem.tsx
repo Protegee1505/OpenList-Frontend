@@ -1,4 +1,11 @@
-import { Center, VStack, Icon, Text } from "@hope-ui/solid"
+import {
+  Center,
+  VStack,
+  Icon,
+  Text,
+  Progress,
+  ProgressIndicator,
+} from "@hope-ui/solid"
 import { Motion } from "solid-motionone"
 import { useContextMenu } from "solid-contextmenu"
 import { batch, Show } from "solid-js"
@@ -7,6 +14,14 @@ import { usePath, useRouter, useUtil } from "~/hooks"
 import { checkboxOpen, getMainColor, local, selectIndex } from "~/store"
 import { ObjType, StoreObj } from "~/types"
 import { bus, hoverColor } from "~/utils"
+import {
+  formatBytes,
+  formatPercentage,
+  nearlyFull,
+  showDiskUsage,
+  toFullUsage,
+  usedPercentage,
+} from "~/utils"
 import { getIconByObj } from "~/utils/icon"
 import { ItemCheckbox, useSelectWithMouse } from "./helper"
 
@@ -141,6 +156,49 @@ export const GridItem = (props: { obj: StoreObj; index: number }) => {
         >
           {props.obj.name}
         </Text>
+        <Show when={showDiskUsage(props.obj.mount_details)}>
+          <VStack
+            class="grid-item-usage"
+            w="$full"
+            spacing="$0"
+            title={toFullUsage(props.obj.mount_details!)}
+          >
+            <Progress
+              w="$full"
+              class="disk-usage-percentage"
+              trackColor="$info3"
+              rounded="$full"
+              size="xs"
+              value={usedPercentage(props.obj.mount_details!)}
+            >
+              <ProgressIndicator
+                color={
+                  nearlyFull(props.obj.mount_details!) ? "$danger6" : "$info6"
+                }
+                rounded="$md"
+              />
+            </Progress>
+            <Text
+              class="disk-usage-text"
+              fontSize="$xs"
+              lineHeight="$tight"
+              textAlign="center"
+              color="$neutral11"
+            >
+              {formatBytes(props.obj.mount_details!.used_space)} used
+            </Text>
+            <Text
+              class="disk-usage-text"
+              fontSize="$xs"
+              lineHeight="$tight"
+              textAlign="center"
+              color="$neutral11"
+            >
+              {formatBytes(props.obj.mount_details!.free_space)} free ·{" "}
+              {formatPercentage(props.obj.mount_details!)}
+            </Text>
+          </VStack>
+        </Show>
       </VStack>
     </Motion.div>
   )

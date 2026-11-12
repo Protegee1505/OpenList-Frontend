@@ -27,7 +27,8 @@ import {
   hoverColor,
   showDiskUsage,
   usedPercentage,
-  toReadableUsage,
+  toDetailedUsage,
+  toFullUsage,
   nearlyFull,
 } from "~/utils"
 import { getIconByObj } from "~/utils/icon"
@@ -177,11 +178,13 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
           <Show
             fallback={
               <Text
-                class="size"
+                class="size disk-usage-text"
                 w={cols[1].w}
                 textAlign={cols[1].textAlign as any}
+                fontSize="$xs"
+                title={toFullUsage(props.obj.mount_details!)}
               >
-                {toReadableUsage(props.obj.mount_details!)}
+                {toDetailedUsage(props.obj.mount_details!)}
               </Text>
             }
             when={!getSettingBool("show_disk_usage_in_plain_text")}
@@ -193,6 +196,7 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
               rounded="$full"
               size="md"
               value={usedPercentage(props.obj.mount_details!)}
+              title={toFullUsage(props.obj.mount_details!)}
             >
               <ProgressIndicator
                 color={
@@ -200,8 +204,8 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
                 }
                 rounded="$md"
               />
-              <ProgressLabel class="disk-usage-text">
-                {toReadableUsage(props.obj.mount_details!)}
+              <ProgressLabel class="disk-usage-text" fontSize="$xs">
+                {toDetailedUsage(props.obj.mount_details!)}
               </ProgressLabel>
             </Progress>
           </Show>
