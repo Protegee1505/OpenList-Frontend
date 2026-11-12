@@ -1,0 +1,90 @@
+name: build frontend dist
+
+# Builds the ListCloud frontend and publishes dist.tar.gz as a release asset.
+# Point the Render service's CUSTOM_DIST_URL at the published asset.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-dist.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to publish the dist under'
+        required: true
+        default: 'v4.2.9-custom.2'
+      publish:
+        description: 'Upload the dist as a release asset'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || 'v4.2.9-custom.2' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify the build output
+        run: |
+          set -eux
+          test -f dist/index.html
+          test -d dist/assets
+          # The storage-usage patch must be present in the bundle.
+          grep -rl "disk-usage-text" dist/assets | head -n 5
+          grep -rl "grid-item-usage" dist/assets | head -n 5
+
+      - name: Package
+        run: |
+          set -eux
+          tar -czf "openlist-frontend-dist-${TAG}.tar.gz" -C dist .
+          sha256sum openlist-frontend-dist-*.tar.gz > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Publish release asset
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: 'OpenList frontend ${{ env.TAG }} (storage usage)'
+          body: |
+            ListCloud frontend build. Shows per-mount storage usage on the home
+            page in both list and grid layouts (used / free / total in readable
+            units plus a percentage), and keeps the storage management page's
+            usage display.
+          files: |
+            openlist-frontend-dist-*.tar.gz
+            SHA256SUMS
+          fail_on_unmatched_files: true
+
+      - name: Upload workflow artifact (every run)
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ github.run_number }}
+          path: |
+            openlist-frontend-dist-*.tar.gz
+            SHA256SUMS
+          retention-days: 30
